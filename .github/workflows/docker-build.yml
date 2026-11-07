@@ -1,0 +1,25 @@
+name: Docker Build CI
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build the Docker image
+        run: docker build -t my-flask-app .
+
+      - name: Run container and test
+        run: |
+          # Запускаем контейнер в фоне
+          docker run -d -p 5000:5000 --name test-container my-flask-app
+          # Ждем 3 секунды, чтобы Flask успел запуститься
+          sleep 3
+          # Проверяем, отвечает ли сервер (если curl упадет, пайплайн загорится красным)
+          curl -f http://localhost:5000/items || exit 1
