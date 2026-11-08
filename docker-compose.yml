@@ -6,3 +6,22 @@ services:
       - "5000:5000"
     volumes:
       - .:/app
+    environment:
+      # Строка подключения: логин:пароль@имя_сервиса_базы:порт/имя_базы
+      - DATABASE_URL=postgresql+psycopg2://user:password@db:5432/mydb
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15-alpine
+    container_name: postgres-container
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=mydb
+    volumes:
+      # Это нужно, чтобы данные не удалялись при перезапуске контейнера
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
