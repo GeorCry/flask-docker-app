@@ -1,4 +1,4 @@
-name: Docker Build CI
+name: Docker Compose CI
 
 on:
   push:
@@ -12,14 +12,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build the Docker image
-        run: docker build -t my-flask-app .
+      - name: Start containers with Docker Compose
+        # Собираем образы и запускаем оба контейнера в фоне
+        run: docker compose up -d --build
 
-      - name: Run container and test
+      - name: Wait for services to be ready
+        # Ждем 10 секунд, чтобы PostgreSQL успел инициализироваться
+        run: sleep 10
+
+      - name: Test API endpoint
+        # Делаем запрос к нашему API. Если он вернет ошибку (не 200), пайплайн упадет.
         run: |
-          # Запускаем контейнер в фоне
-          docker run -d -p 5000:5000 --name test-container my-flask-app
-          # Ждем 3 секунды, чтобы Flask успел запуститься
-          sleep 3
-          # Проверяем, отвечает ли сервер (если curl упадет, пайплайн загорится красным)
           curl -f http://localhost:5000/items || exit 1
+
+      - name: Stop containers
+        # Останавливаем контейнеры в любом случае (даже если тест упал), чтобы не тратить ресурсы GitHub
+        if: always()
+        run: docker compose down
